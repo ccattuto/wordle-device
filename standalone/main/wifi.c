@@ -2,7 +2,10 @@
     Worlde Device for the ESP32C3 RBG development board
 
     Written in 2022 by Ciro Cattuto <ciro.cattuto@gmail.com>
-    
+    based on Espressif System's examples at
+    https://github.com/espressif/esp-idf/tree/master/examples/wifi/getting_started/station
+    https://github.com/espressif/esp-idf/tree/master/examples/protocols/sntp
+
     To the extent possible under law, the author(s) have dedicated all copyright
     and related and neighboring rights to this software to the public domain worldwide.
     This software is distributed without any warranty.
