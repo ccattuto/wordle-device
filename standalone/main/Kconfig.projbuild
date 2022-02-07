@@ -1,0 +1,20 @@
+menu "Wordle Device Configuration"
+
+    config ESP_WIFI_SSID
+        string "WiFi SSID"
+        default "myssid"
+        help
+            SSID (network name) for the device to connect to.
+
+    config ESP_WIFI_PASSWORD
+        string "WiFi Password"
+        default "mypassword"
+        help
+            WiFi password (WPA or WPA2).
+
+	config TWITTER_BEARER_TOKEN
+        string "Twitter API Bearer Token"
+        default "mybearertoken"
+        help
+            Bearer Token to access Twitter API v2
+endmenu

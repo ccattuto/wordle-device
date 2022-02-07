@@ -1,0 +1,12 @@
+{
+    "cmake.configureOnOpen": true,
+    "cmake.buildEnvironment": {
+        "IDF_PATH": "/Users/ciro/hack/esp-idf"
+    },
+    "cmake.configureEnvironment": {
+        "IDF_PATH": "/Users/ciro/hack/esp-idf"
+    },
+    "files.associations": {
+        "led_strip.h": "c"
+    },
+}
