@@ -1,5 +1,5 @@
 /*
-    Worlde Device for the ESP32C3 RBG development board
+    Wordle Device for the ESP32C3 RBG development board
 
     Written in 2022 by Ciro Cattuto <ciro.cattuto@gmail.com>
     
@@ -24,8 +24,7 @@
 
 const char *TAG = "wordle";
 
-void app_main(void)
-{
+void app_main(void) {
     // Initialize NVS
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {

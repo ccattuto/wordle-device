@@ -1,6 +1,6 @@
 /*
-    Worlde Device for the ESP32C3 RBG development board
-
+    Wordle Device for the ESP32C3 RBG development board
+    
     Written in 2022 by Ciro Cattuto <ciro.cattuto@gmail.com>
     based on Espressif System's example at
     https://github.com/espressif/esp-idf/tree/master/examples/protocols/https_mbedtls
