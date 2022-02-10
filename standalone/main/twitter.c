@@ -105,12 +105,7 @@ static void https_stream_task(void *pvParameters)
         goto exit;
     }
 
-    /* MBEDTLS_SSL_VERIFY_OPTIONAL is bad for security, in this example it will print
-       a warning if CA verification fails but it will continue to connect.
-
-       You should consider using MBEDTLS_SSL_VERIFY_REQUIRED in your own code.
-    */
-    mbedtls_ssl_conf_authmode(&conf, MBEDTLS_SSL_VERIFY_OPTIONAL);
+    mbedtls_ssl_conf_authmode(&conf, MBEDTLS_SSL_VERIFY_REQUIRED);
     mbedtls_ssl_conf_ca_chain(&conf, &cacert, NULL);
     mbedtls_ssl_conf_rng(&conf, mbedtls_ctr_drbg_random, &ctr_drbg);
 
