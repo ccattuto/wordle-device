@@ -24,9 +24,6 @@
 #include "esp_wifi.h"
 #include "esp_event.h"
 #include "esp_log.h"
-#include "time.h"
-#include "sys/time.h"
-#include "esp_sntp.h"
 #include "esp_tls.h"
 
 // Wi-Fi 
@@ -134,59 +131,4 @@ int wifi_init (void)
     vEventGroupDelete(s_wifi_event_group);
 
 	return (bits & WIFI_CONNECTED_BIT) ? 1 : 0;
-}
-
-static void time_sync_notification_cb(struct timeval *tv)
-{
-    ESP_LOGI(TAG, "Notification of a time synchronization event");
-}
-
-static void initialize_sntp(void)
-{
-    ESP_LOGI(TAG, "Initializing SNTP");
-    sntp_setoperatingmode(SNTP_OPMODE_POLL);
-
-    sntp_setservername(0, "pool.ntp.org");
-
-    sntp_set_time_sync_notification_cb(time_sync_notification_cb);
-
-    sntp_init();
-
-    ESP_LOGI(TAG, "List of configured NTP servers:");
-
-    for (uint8_t i = 0; i < SNTP_MAX_SERVERS; ++i){
-        if (sntp_getservername(i))
-            ESP_LOGI(TAG, "server %d: %s", i, sntp_getservername(i));
-    }
-}
-
-int obtain_time(void) {
-    char strftime_buf[64];
-
-    initialize_sntp();
-
-    // wait for time to be set
-    time_t now = 0;
-    struct tm timeinfo = { 0 };
-    int retry = 0;
-    const int retry_count = 50;
-    while (sntp_get_sync_status() == SNTP_SYNC_STATUS_RESET && ++retry < retry_count) {
-        ESP_LOGI(TAG, "Waiting for system time to be set... (%d/%d)", retry, retry_count);
-        vTaskDelay(2000 / portTICK_PERIOD_MS);
-    }
-
-    if (retry == retry_count)
-        return -1;
-
-    time(&now);
-    localtime_r(&now, &timeinfo);
-
-    // Set timezone to CET
-    setenv("TZ", "UTC", 1);
-    tzset();
-    localtime_r(&now, &timeinfo);
-    strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
-    ESP_LOGI(TAG, "The current UTC date/time is: %s", strftime_buf);
-
-    return 0;
 }

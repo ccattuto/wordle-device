@@ -14,6 +14,5 @@
 #define __WIFI_H__
 
 int wifi_init(void);
-int obtain_time(void);
 
 #endif /* __WIFI_H__ **/

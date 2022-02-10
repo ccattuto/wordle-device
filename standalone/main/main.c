@@ -38,12 +38,6 @@ void app_main(void) {
 	if (!ret)
 		blink_red_forever();
 
-    // get time via NTP
-    ret = obtain_time();
-    // couldn't get time
-    if (ret)
-		blink_red_forever();
-
     // open TLS connection to Twitter API endpoint
     twitter_api_init();
 

@@ -56,7 +56,7 @@ void ledmatrix_update(char *buf, int num_lines) {
 
 void blink_red_forever(void) {
 	while (1) {
-       	pStrip->set_pixel(pStrip, 0, 32, 0, 0);
+       	pStrip->set_pixel(pStrip, 12, 32, 0, 0); // central LED
        	pStrip->refresh(pStrip, 100);
        	vTaskDelay(CONFIG_BLINK_PERIOD / portTICK_PERIOD_MS);
        	pStrip->clear(pStrip, 50);
