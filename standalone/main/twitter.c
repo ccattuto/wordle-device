@@ -67,31 +67,26 @@ static void https_stream_task(void *pvParameters) {
     mbedtls_ssl_config_init(&conf);
 
     mbedtls_entropy_init(&entropy);
-    if ((ret = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy,
-                                    NULL, 0)) != 0) {
+    if ((ret = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, NULL, 0)) != 0) {
         ESP_LOGE(TAG, "mbedtls_ctr_drbg_seed returned %d", ret);
         abort();
     }
 
     ESP_LOGI(TAG, "Attaching the certificate bundle...");
-
     ret = esp_crt_bundle_attach(&conf);
-
     if (ret < 0) {
         ESP_LOGE(TAG, "esp_crt_bundle_attach returned -0x%x\n\n", -ret);
         abort();
     }
 
     ESP_LOGI(TAG, "Setting hostname for TLS session...");
-
-     /* Hostname set here should match CN in server certificate */
+    /* Hostname set here should match CN in server certificate */
     if ((ret = mbedtls_ssl_set_hostname(&ssl, API_SERVER)) != 0) {
         ESP_LOGE(TAG, "mbedtls_ssl_set_hostname returned -0x%x", -ret);
         abort();
     }
 
     ESP_LOGI(TAG, "Setting up the SSL/TLS structure...");
-
     if ((ret = mbedtls_ssl_config_defaults(&conf,
                                           MBEDTLS_SSL_IS_CLIENT,
                                           MBEDTLS_SSL_TRANSPORT_STREAM,
@@ -109,13 +104,12 @@ static void https_stream_task(void *pvParameters) {
         goto exit;
     }
 
-    while(1) {
+    while (1) {
         mbedtls_net_init(&server_fd);
 
         ESP_LOGI(TAG, "Connecting to %s:%s...", API_SERVER, HTTPS_PORT);
 
-        if ((ret = mbedtls_net_connect(&server_fd, API_SERVER,
-                                      HTTPS_PORT, MBEDTLS_NET_PROTO_TCP)) != 0) {
+        if ((ret = mbedtls_net_connect(&server_fd, API_SERVER, HTTPS_PORT, MBEDTLS_NET_PROTO_TCP)) != 0) {
             ESP_LOGE(TAG, "mbedtls_net_connect returned -%x", -ret);
             goto exit;
         }
@@ -147,7 +141,6 @@ static void https_stream_task(void *pvParameters) {
         ESP_LOGI(TAG, "Cipher suite is %s", mbedtls_ssl_get_ciphersuite(&ssl));
 
         ESP_LOGI(TAG, "Writing HTTP request...");
-
         size_t written_bytes = 0;
         do {
             ret = mbedtls_ssl_write(&ssl,
@@ -188,10 +181,14 @@ static void https_stream_task(void *pvParameters) {
             }
 
             len = ret;
-           
+            ESP_LOGD(TAG, "%d bytes read", len);
+
             // enqueue tweet
-            ret = xStreamBufferSend(stream_buf, buf, len, pdMS_TO_TICKS(1000));
-            ESP_LOGD(TAG, "%d bytes read, %d bytes enqueued", len, ret);
+            while (len > 0) {
+                ret = xStreamBufferSend(stream_buf, buf, len, pdMS_TO_TICKS(1000));
+                ESP_LOGD(TAG, "%d bytes enqueued", ret);
+                len -= ret;
+            }
         } while (1);
 
         mbedtls_ssl_close_notify(&ssl);
@@ -213,7 +210,7 @@ static void https_stream_task(void *pvParameters) {
             ESP_LOGI(TAG, "%d...", countdown);
             vTaskDelay(1000 / portTICK_PERIOD_MS);
         }
-        ESP_LOGI(TAG, "Restarting Twitter API HTTPS/TSL connection...");
+        ESP_LOGI(TAG, "Restarting Twitter API HTTPS connection...");
     }
 }
 
@@ -223,6 +220,6 @@ void twitter_api_init(void) {
     if (stream_buf == NULL)
 		blink_red_forever();
 
-    // start HTTPS/TLS streaming connection to Twitter v2 API
+    // start HTTPS streaming connection to Twitter v2 API
     xTaskCreate(&https_stream_task, "https_stream_task", 8192, NULL, 5, NULL);
 }
