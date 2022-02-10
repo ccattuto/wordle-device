@@ -32,13 +32,14 @@
 
 // Twitter API v2 streaming endpoint
 #define BEARER_TOKEN CONFIG_TWITTER_BEARER_TOKEN
-#define WEB_SERVER "api.twitter.com"
-#define WEB_PORT "443"
-#define WEB_URL "https://api.twitter.com/2/tweets/search/stream"
+#define API_SERVER "api.twitter.com"
+#define HTTPS_PORT "443"
+#define API_STREAM_URL "https://api.twitter.com/2/tweets/search/stream"
+#define API_STREAM_RULES_URL "https://api.twitter.com/2/tweets/search/stream/rules"
 
 // streaming API request
-static const char *REQUEST = "GET " WEB_URL " HTTP/1.0\r\n"
-    "Host: "WEB_SERVER"\r\n"
+static const char *REQUEST_STREAM = "GET " API_STREAM_URL " HTTP/1.0\r\n"
+    "Host: "API_SERVER"\r\n"
     "User-Agent: esp-idf/1.0 esp32\r\n"
     "Authorization: Bearer " BEARER_TOKEN "\r\n"
     "\r\n";
@@ -87,7 +88,7 @@ static void https_stream_task(void *pvParameters)
     ESP_LOGI(TAG, "Setting hostname for TLS session...");
 
      /* Hostname set here should match CN in server certificate */
-    if((ret = mbedtls_ssl_set_hostname(&ssl, WEB_SERVER)) != 0)
+    if((ret = mbedtls_ssl_set_hostname(&ssl, API_SERVER)) != 0)
     {
         ESP_LOGE(TAG, "mbedtls_ssl_set_hostname returned -0x%x", -ret);
         abort();
@@ -122,10 +123,10 @@ static void https_stream_task(void *pvParameters)
     while(1) {
         mbedtls_net_init(&server_fd);
 
-        ESP_LOGI(TAG, "Connecting to %s:%s...", WEB_SERVER, WEB_PORT);
+        ESP_LOGI(TAG, "Connecting to %s:%s...", API_SERVER, HTTPS_PORT);
 
-        if ((ret = mbedtls_net_connect(&server_fd, WEB_SERVER,
-                                      WEB_PORT, MBEDTLS_NET_PROTO_TCP)) != 0)
+        if ((ret = mbedtls_net_connect(&server_fd, API_SERVER,
+                                      HTTPS_PORT, MBEDTLS_NET_PROTO_TCP)) != 0)
         {
             ESP_LOGE(TAG, "mbedtls_net_connect returned -%x", -ret);
             goto exit;
@@ -167,8 +168,8 @@ static void https_stream_task(void *pvParameters)
         size_t written_bytes = 0;
         do {
             ret = mbedtls_ssl_write(&ssl,
-                                    (const unsigned char *)REQUEST + written_bytes,
-                                    strlen(REQUEST) - written_bytes);
+                                    (const unsigned char *) REQUEST_STREAM + written_bytes,
+                                    strlen(REQUEST_STREAM) - written_bytes);
             if (ret >= 0) {
                 ESP_LOGI(TAG, "%d bytes written", ret);
                 written_bytes += ret;
@@ -176,7 +177,7 @@ static void https_stream_task(void *pvParameters)
                 ESP_LOGE(TAG, "mbedtls_ssl_write returned -0x%x", -ret);
                 goto exit;
             }
-        } while(written_bytes < strlen(REQUEST));
+        } while (written_bytes < strlen(REQUEST_STREAM));
 
         ESP_LOGI(TAG, "Reading HTTP response...");
 
@@ -208,7 +209,7 @@ static void https_stream_task(void *pvParameters)
             // enqueue tweet
             ret = xStreamBufferSend(stream_buf, buf, len, pdMS_TO_TICKS(1000));
             ESP_LOGD(TAG, "%d bytes read, %d bytes enqueued", len, ret);
-        } while(1);
+        } while (1);
 
         mbedtls_ssl_close_notify(&ssl);
 
@@ -221,13 +222,11 @@ static void https_stream_task(void *pvParameters)
             ESP_LOGE(TAG, "Last error was: -0x%x - %s", -ret, buf);
         }
 
-        putchar('\n'); // JSON output doesn't have a newline at end
-
         static int request_count;
         ESP_LOGI(TAG, "Completed %d requests", ++request_count);
         printf("Minimum free heap size: %d bytes\n", esp_get_minimum_free_heap_size());
 
-        for(int countdown = 10; countdown >= 0; countdown--) {
+        for (int countdown = 10; countdown >= 0; countdown--) {
             ESP_LOGI(TAG, "%d...", countdown);
             vTaskDelay(1000 / portTICK_PERIOD_MS);
         }
