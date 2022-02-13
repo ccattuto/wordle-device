@@ -28,6 +28,9 @@
 // maximum number of parsed JSON tokens
 #define JSON_MAX_TOKENS 50
 
+// tag used by filtered stream's rule to mark "wordle" tweets
+#define TAG_WORDLE CONFIG_TWITTER_WORDLE_TAG
+
 // JSON parser
 static lwjson_t json_parser;
 static lwjson_token_t tokens[JSON_MAX_TOKENS];
@@ -107,6 +110,33 @@ static int check_wordle(char *s, char *buf) {
 	return wordle_lines;
 }
 
+static int tagged_wordle() {
+	lwjson_token_t *t, *u, *v;
+	char *tag;
+	int found_tag = 0;
+
+	t = (lwjson_token_t *) lwjson_find(&json_parser, "matching_rules");
+	if (t == NULL || t->type != LWJSON_TYPE_ARRAY)
+		return 0;
+
+	// loop over matched rules
+	for (u = (lwjson_token_t *) lwjson_get_first_child(t); u != NULL; u = u->next) {
+		v = (lwjson_token_t *) lwjson_find_ex(&json_parser, u, "tag");
+		if (v == NULL || v->type != LWJSON_TYPE_STRING)
+			return 0;
+
+		// is rule tagged a TAG_WORDLE ?
+		tag = (char *) v->u.str.token_value;
+		tag[v->u.str.token_value_len] = 0;
+		if (strcmp(tag, TAG_WORDLE) == 0) {
+			found_tag = 1;
+			break;
+		}
+	}
+
+	return found_tag; 
+}
+
 static void process_tweet(char *buf) {
 	char wordle_buf[5*6 + 1] = {0, };
     int wordle_len;
@@ -117,26 +147,35 @@ static void process_tweet(char *buf) {
 	ESP_LOGI(TAG, "got tweet");
 	printf("%s\r\n", buf);
 
+	// parse JSON
 	ret = lwjson_parse(&json_parser, buf);
 	if (ret != lwjsonOK) {
 		ESP_LOGI(TAG, "cannot parse JSON (%d)", ret);
 		return;
 	}
 
-	t = (lwjson_token_t *) lwjson_find(&json_parser, "data.text");
-	if (t == NULL) {
-		ESP_LOGI(TAG, "invalid JSON");
+	// check that one matched rule is tagged as "wordle"
+	if (!tagged_wordle()) {
+		ESP_LOGI(TAG, "not tagged as \"%s\"", TAG_WORDLE);
 		return;
 	}
 
+	// extract tweet message
+	t = (lwjson_token_t *) lwjson_find(&json_parser, "data.text");
+	if (t == NULL || t->type != LWJSON_TYPE_STRING) {
+		ESP_LOGI(TAG, "invalid JSON");
+		return;
+	}
 	status_text = (char *) t->u.str.token_value;
 	status_text[t->u.str.token_value_len] = 0;
 
+	// check whether it containts a wordle
 	wordle_len = check_wordle(status_text, wordle_buf);
 
-	if (wordle_len == 0 || wordle_len > 5)
+	if (wordle_len == 0 || wordle_len > 5) // (we can't visualize 6-line wordles)
 		return;
 
+	// check that it ends with "GGGGG"
 	for (i=0; i<5; i++) {
 		if (wordle_buf[5*(wordle_len-1) + i] != 'G')
 			break;
@@ -147,6 +186,7 @@ static void process_tweet(char *buf) {
 	wordle_buf[5*wordle_len] = 0;
 	//printf("%s\r\n", wordle_buf);
 
+	// push it to LED matrix
 	ledmatrix_update(wordle_buf, wordle_len);
 }
 

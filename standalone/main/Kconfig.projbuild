@@ -16,5 +16,11 @@ menu "Wordle Device Configuration"
         string "Twitter API Bearer Token"
         default "mybearertoken"
         help
-            Bearer Token to access Twitter API v2
+            Bearer Token to access Twitter v2 API.
+
+	config TWITTER_WORDLE_TAG
+        string "Tag for wordle tweets"
+        default "wordle"
+        help
+            Matching rule's tag for wordle tweets.
 endmenu
