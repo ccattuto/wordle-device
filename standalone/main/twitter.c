@@ -1,10 +1,10 @@
 /*
     Wordle Device for the ESP32C3 RBG development board
-    
+
     Written in 2022 by Ciro Cattuto <ciro.cattuto@gmail.com>
     based on Espressif System's example at
     https://github.com/espressif/esp-idf/tree/master/examples/protocols/https_mbedtls
-    
+
     To the extent possible under law, the author(s) have dedicated all copyright
     and related and neighboring rights to this software to the public domain worldwide.
     This software is distributed without any warranty.
@@ -39,16 +39,17 @@
 
 // streaming API request
 static const char *REQUEST_STREAM = "GET " API_STREAM_URL " HTTP/1.0\r\n"
-    "Host: "API_SERVER"\r\n"
-    "User-Agent: esp-idf/1.0 esp32\r\n"
-    "Authorization: Bearer " BEARER_TOKEN "\r\n"
-    "\r\n";
+                                    "Host: " API_SERVER "\r\n"
+                                    "User-Agent: esp-idf/1.0 esp32 wordle-device\r\n"
+                                    "Authorization: Bearer " BEARER_TOKEN "\r\n"
+                                    "\r\n";
 
 // tweet queue
 #define STREAM_BUF_SIZE 1024
 StreamBufferHandle_t stream_buf;
 
-static void https_stream_task(void *pvParameters) {
+static void https_stream_task(void *pvParameters)
+{
     char buf[512];
     int ret, flags, len;
 
@@ -67,30 +68,34 @@ static void https_stream_task(void *pvParameters) {
     mbedtls_ssl_config_init(&conf);
 
     mbedtls_entropy_init(&entropy);
-    if ((ret = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, NULL, 0)) != 0) {
+    if ((ret = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, NULL, 0)) != 0)
+    {
         ESP_LOGE(TAG, "mbedtls_ctr_drbg_seed returned %d", ret);
         abort();
     }
 
     ESP_LOGI(TAG, "Attaching the certificate bundle...");
     ret = esp_crt_bundle_attach(&conf);
-    if (ret < 0) {
+    if (ret < 0)
+    {
         ESP_LOGE(TAG, "esp_crt_bundle_attach returned -0x%x\n\n", -ret);
         abort();
     }
 
     ESP_LOGI(TAG, "Setting hostname for TLS session...");
     /* Hostname set here should match CN in server certificate */
-    if ((ret = mbedtls_ssl_set_hostname(&ssl, API_SERVER)) != 0) {
+    if ((ret = mbedtls_ssl_set_hostname(&ssl, API_SERVER)) != 0)
+    {
         ESP_LOGE(TAG, "mbedtls_ssl_set_hostname returned -0x%x", -ret);
         abort();
     }
 
     ESP_LOGI(TAG, "Setting up the SSL/TLS structure...");
     if ((ret = mbedtls_ssl_config_defaults(&conf,
-                                          MBEDTLS_SSL_IS_CLIENT,
-                                          MBEDTLS_SSL_TRANSPORT_STREAM,
-                                          MBEDTLS_SSL_PRESET_DEFAULT)) != 0) {
+                                           MBEDTLS_SSL_IS_CLIENT,
+                                           MBEDTLS_SSL_TRANSPORT_STREAM,
+                                           MBEDTLS_SSL_PRESET_DEFAULT)) != 0)
+    {
         ESP_LOGE(TAG, "mbedtls_ssl_config_defaults returned %d", ret);
         goto exit;
     }
@@ -99,17 +104,20 @@ static void https_stream_task(void *pvParameters) {
     mbedtls_ssl_conf_ca_chain(&conf, &cacert, NULL);
     mbedtls_ssl_conf_rng(&conf, mbedtls_ctr_drbg_random, &ctr_drbg);
 
-    if ((ret = mbedtls_ssl_setup(&ssl, &conf)) != 0) {
+    if ((ret = mbedtls_ssl_setup(&ssl, &conf)) != 0)
+    {
         ESP_LOGE(TAG, "mbedtls_ssl_setup returned -0x%x\n\n", -ret);
         goto exit;
     }
 
-    while (1) {
+    while (1)
+    {
         mbedtls_net_init(&server_fd);
 
         ESP_LOGI(TAG, "Connecting to %s:%s...", API_SERVER, HTTPS_PORT);
 
-        if ((ret = mbedtls_net_connect(&server_fd, API_SERVER, HTTPS_PORT, MBEDTLS_NET_PROTO_TCP)) != 0) {
+        if ((ret = mbedtls_net_connect(&server_fd, API_SERVER, HTTPS_PORT, MBEDTLS_NET_PROTO_TCP)) != 0)
+        {
             ESP_LOGE(TAG, "mbedtls_net_connect returned -%x", -ret);
             goto exit;
         }
@@ -120,8 +128,10 @@ static void https_stream_task(void *pvParameters) {
 
         ESP_LOGI(TAG, "Performing the SSL/TLS handshake...");
 
-        while ((ret = mbedtls_ssl_handshake(&ssl)) != 0) {
-            if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
+        while ((ret = mbedtls_ssl_handshake(&ssl)) != 0)
+        {
+            if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE)
+            {
                 ESP_LOGE(TAG, "mbedtls_ssl_handshake returned -0x%x", -ret);
                 goto exit;
             }
@@ -129,12 +139,15 @@ static void https_stream_task(void *pvParameters) {
 
         ESP_LOGI(TAG, "Verifying peer X.509 certificate...");
 
-        if ((flags = mbedtls_ssl_get_verify_result(&ssl)) != 0) {
+        if ((flags = mbedtls_ssl_get_verify_result(&ssl)) != 0)
+        {
             ESP_LOGW(TAG, "Failed to verify peer certificate!");
             bzero(buf, sizeof(buf));
             mbedtls_x509_crt_verify_info(buf, sizeof(buf), "  ! ", flags);
             ESP_LOGW(TAG, "verification info: %s", buf);
-        } else {
+        }
+        else
+        {
             ESP_LOGI(TAG, "Certificate verified.");
         }
 
@@ -142,14 +155,18 @@ static void https_stream_task(void *pvParameters) {
 
         ESP_LOGI(TAG, "Writing HTTP request...");
         size_t written_bytes = 0;
-        do {
+        do
+        {
             ret = mbedtls_ssl_write(&ssl,
-                                    (const unsigned char *) REQUEST_STREAM + written_bytes,
+                                    (const unsigned char *)REQUEST_STREAM + written_bytes,
                                     strlen(REQUEST_STREAM) - written_bytes);
-            if (ret >= 0) {
+            if (ret >= 0)
+            {
                 ESP_LOGI(TAG, "%d bytes written", ret);
                 written_bytes += ret;
-            } else if (ret != MBEDTLS_ERR_SSL_WANT_WRITE && ret != MBEDTLS_ERR_SSL_WANT_READ) {
+            }
+            else if (ret != MBEDTLS_ERR_SSL_WANT_WRITE && ret != MBEDTLS_ERR_SSL_WANT_READ)
+            {
                 ESP_LOGE(TAG, "mbedtls_ssl_write returned -0x%x", -ret);
                 goto exit;
             }
@@ -157,7 +174,8 @@ static void https_stream_task(void *pvParameters) {
 
         ESP_LOGI(TAG, "Reading HTTP response...");
 
-        do {
+        do
+        {
             len = sizeof(buf) - 1;
             bzero(buf, sizeof(buf));
             ret = mbedtls_ssl_read(&ssl, (unsigned char *)buf, len);
@@ -165,17 +183,20 @@ static void https_stream_task(void *pvParameters) {
             if (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE)
                 continue;
 
-            if (ret == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY) {
+            if (ret == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY)
+            {
                 ret = 0;
                 break;
             }
 
-            if (ret < 0) {
+            if (ret < 0)
+            {
                 ESP_LOGE(TAG, "mbedtls_ssl_read returned -0x%x", -ret);
                 break;
             }
 
-            if (ret == 0) {
+            if (ret == 0)
+            {
                 ESP_LOGI(TAG, "connection closed");
                 break;
             }
@@ -184,7 +205,8 @@ static void https_stream_task(void *pvParameters) {
             ESP_LOGD(TAG, "%d bytes read", len);
 
             // enqueue tweet
-            while (len > 0) {
+            while (len > 0)
+            {
                 ret = xStreamBufferSend(stream_buf, buf, len, pdMS_TO_TICKS(1000));
                 ESP_LOGD(TAG, "%d bytes enqueued", ret);
                 len -= ret;
@@ -197,7 +219,8 @@ static void https_stream_task(void *pvParameters) {
         mbedtls_ssl_session_reset(&ssl);
         mbedtls_net_free(&server_fd);
 
-        if (ret != 0) {
+        if (ret != 0)
+        {
             mbedtls_strerror(ret, buf, 100);
             ESP_LOGE(TAG, "Last error was: -0x%x - %s", -ret, buf);
         }
@@ -205,7 +228,8 @@ static void https_stream_task(void *pvParameters) {
         static int request_count;
         ESP_LOGI(TAG, "Completed %d requests", ++request_count);
 
-        for (int countdown = 10; countdown >= 0; countdown--) {
+        for (int countdown = 10; countdown >= 0; countdown--)
+        {
             ESP_LOGI(TAG, "%d...", countdown);
             vTaskDelay(1000 / portTICK_PERIOD_MS);
         }
@@ -213,11 +237,12 @@ static void https_stream_task(void *pvParameters) {
     }
 }
 
-void twitter_api_init(void) {
+void twitter_api_init(void)
+{
     // create stream buffer
     stream_buf = xStreamBufferCreate(STREAM_BUF_SIZE, 1);
     if (stream_buf == NULL)
-		blink_red_forever();
+        blink_red_forever();
 
     // start HTTPS streaming connection to Twitter v2 API
     xTaskCreate(&https_stream_task, "https_stream_task", 8192, NULL, 5, NULL);
