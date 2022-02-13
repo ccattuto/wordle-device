@@ -22,8 +22,8 @@
 #include "freertos/stream_buffer.h"
 #include "esp_log.h"
 
-// buffer holding JSON for a single tweet
-#define TWEET_BUF_LEN 512
+// buffer holding JSON data
+#define TWEET_BUF_LEN 1024
 
 // maximum number of parsed JSON tokens
 #define JSON_MAX_TOKENS 50
