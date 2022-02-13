@@ -1,5 +1,5 @@
 /*
-    Wordle Device for the ESP32C3 RBG development board
+    Wordle Device for the ESP32C3 RGB development board
 
     Written in 2022 by Ciro Cattuto <ciro.cattuto@gmail.com>
     based on Espressif System's example at
