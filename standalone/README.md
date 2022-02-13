@@ -4,16 +4,17 @@ This is a standalone application, written in C, that depends only on the [ESP-ID
 
 ## Operation
 
-The application connects to a Wi-Fi access point using an SSID and password specified in the configuration menu. It then connects to the [Twitter v2 Filtered Stream API](https://developer.twitter.com/en/docs/twitter-api/tweets/filtered-stream/introduction) via HTTPS, using a Bearer Token generated as described [here](https://developer.twitter.com/en/docs/authentication/oauth-2-0/bearer-tokens), also specified in the configuration menu. Creating a bearer token requires the Twitter App to be part of a [project](https://developer.twitter.com/en/docs/projects/overview).
+The application connects to a Wi-Fi access point using an SSID and password specified in the configuration menu. It then connects to the [Twitter v2 Filtered Stream API](https://developer.twitter.com/en/docs/twitter-api/tweets/filtered-stream/introduction) via HTTPS, using a Bearer Token generated as described [here](https://developer.twitter.com/en/docs/authentication/oauth-2-0/bearer-tokens), also specified in the configuration menu. Access to Twitter API v2 with a bearer token requires the Twitter App to be part of a [project](https://developer.twitter.com/en/docs/projects/overview).
 
 The application assumes that a rule to filter tweets to be visualized has already been configured, and that the rule is tagged as `wordle`. The rule's tag can be changed in the configuration menu. To add such a rule, you can proceed as illustrated in [Twitter's filtered stream quick start guide](https://developer.twitter.com/en/docs/twitter-api/tweets/filtered-stream/quick-start) and add a rule as follows, replacing `$APP_ACCESS_TOKEN` with your Bearer Token:
-```
+
+```shell
 curl -X POST 'https://api.twitter.com/2/tweets/search/stream/rules' \
 -H "Content-type: application/json" \
 -H "Authorization: Bearer $APP_ACCESS_TOKEN" -d \
 '{
   "add": [
-    {"value": "worlde OR #wordle", "tag": "wordle"}
+    {"value": "wordle OR #wordle", "tag": "wordle"}
   ]
 }'
 ```
@@ -33,9 +34,6 @@ Followed by:
 
 or
 
-`ide.py flash monitor`
+`idf.py flash monitor`
 
 to see the debug console and the text of incoming tweets.
-
-
-
