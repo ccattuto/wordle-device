@@ -6,5 +6,6 @@ Pull [Wordle](https://www.powerlanguage.co.uk/wordle/) solutions from the Twitte
 
 There are two implementations here:
 
-- `wordle-device.ino` and `wordle.py`: use the Arduino IDE and Espressif ESP32-C3 core to upload this sketch to the board; configure the Twitter API keys and tokens in the Python code and run locally with the board connected, to pull the Tweets and send data via serial for display
+- `wordle-device.ino` and `wordle.py`: use the Arduino IDE and Espressif ESP32-C3 core to upload this sketch to the board; configure the Twitter API keys and tokens in the Python code (marked by `CHANGEME`) and run locally with the board connected, to pull the Tweets and send data via serial for display.
+  - Python code requires Tweepy to run (`pip3 install tweepy`)
 - `standalone`: the separate [`README.md`](standalone/README.md) file describes how to configure, install and run this standalone code directly from the board (no local Python code required)
