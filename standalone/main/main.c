@@ -1,5 +1,5 @@
 /*
-    Wordle Device for the ESP32C3 RBG development board
+    Wordle Device for the ESP32C3 RGB development board
 
     Written in 2022 by Ciro Cattuto <ciro.cattuto@gmail.com>
 
@@ -22,25 +22,27 @@
 
 const char *TAG = "wordle";
 
-void app_main(void) {
-    // Initialize NVS
-    esp_err_t ret = nvs_flash_init();
-    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-      ESP_ERROR_CHECK(nvs_flash_erase());
-      ret = nvs_flash_init();
-    }
-    ESP_ERROR_CHECK(ret);
+void app_main(void)
+{
+  // Initialize NVS
+  esp_err_t ret = nvs_flash_init();
+  if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND)
+  {
+    ESP_ERROR_CHECK(nvs_flash_erase());
+    ret = nvs_flash_init();
+  }
+  ESP_ERROR_CHECK(ret);
 
-    ledmatrix_init();
+  ledmatrix_init();
 
-    ret = wifi_init();
-	// couldn't connect or get an IP
-	if (!ret)
-		blink_red_forever();
+  ret = wifi_init();
+  // couldn't connect or get an IP
+  if (!ret)
+    blink_red_forever();
 
-    // open TLS connection to Twitter API endpoint
-    twitter_api_init();
+  // open TLS connection to Twitter API endpoint
+  twitter_api_init();
 
-    // run application (this never returns)
-    wordle();
+  // run application (this never returns)
+  wordle();
 }
