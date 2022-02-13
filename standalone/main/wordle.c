@@ -16,6 +16,7 @@
 #include "ledmatrix.h"
 
 #include <string.h>
+#include "lwjson/lwjson.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/stream_buffer.h"
@@ -23,6 +24,13 @@
 
 // buffer holding JSON for a single tweet
 #define TWEET_BUF_LEN 512
+
+// maximum number of parsed JSON tokens
+#define JSON_MAX_TOKENS 50
+
+// JSON parser
+static lwjson_t json_parser;
+static lwjson_token_t tokens[JSON_MAX_TOKENS];
 
 static int check_wordle_line(char *p, char *p2, char *buf) {
 	uint8_t *s = (uint8_t *) p;
@@ -75,7 +83,7 @@ static int check_wordle_line(char *p, char *p2, char *buf) {
 		return 0;
 }
 
-static int process_tweet(char *s, char *buf) {
+static int check_wordle(char *s, char *buf) {
 	int len = strlen(s);
 	char *p1, *p2;
 	int wordle_lines = 0;
@@ -99,49 +107,78 @@ static int process_tweet(char *s, char *buf) {
 	return wordle_lines;
 }
 
-void wordle(void) {
-    char tweet_buf[TWEET_BUF_LEN];
-    char wordle_buf[5*6 + 1] = {0, };
-    int len;
+static void process_tweet(char *buf) {
+	char wordle_buf[5*6 + 1] = {0, };
     int wordle_len;
-    char *pos1, *pos2;
-    int i;
+    char *status_text;
+	int ret, i;
+	lwjson_token_t *t;
+
+	ESP_LOGI(TAG, "got tweet");
+	printf("%s\r\n", buf);
+
+	ret = lwjson_parse(&json_parser, buf);
+	if (ret != lwjsonOK) {
+		ESP_LOGI(TAG, "cannot parse JSON (%d)", ret);
+		return;
+	}
+
+	t = (lwjson_token_t *) lwjson_find(&json_parser, "data.text");
+	if (t == NULL) {
+		ESP_LOGI(TAG, "invalid JSON");
+		return;
+	}
+
+	status_text = (char *) t->u.str.token_value;
+	status_text[t->u.str.token_value_len] = 0;
+
+	wordle_len = check_wordle(status_text, wordle_buf);
+
+	if (wordle_len == 0 || wordle_len > 5)
+		return;
+
+	for (i=0; i<5; i++) {
+		if (wordle_buf[5*(wordle_len-1) + i] != 'G')
+			break;
+	}
+	if (i < 5)
+		return;
+
+	wordle_buf[5*wordle_len] = 0;
+	//printf("%s\r\n", wordle_buf);
+
+	ledmatrix_update(wordle_buf, wordle_len);
+}
+
+void wordle(void) {
+    char buf[TWEET_BUF_LEN];
+	char *tweet_buf = buf;
+    int len;
+    char *pos;
+
+	// initialize JSON parser
+	lwjson_init(&json_parser, tokens, LWJSON_ARRAYSIZE(tokens));
 
     while (1) {
-        len = xStreamBufferReceive(stream_buf, tweet_buf, TWEET_BUF_LEN, portMAX_DELAY);
-
-        if (tweet_buf[0] != '{' || tweet_buf[len-1] != '\n')
+		// read stream buffer
+        len = xStreamBufferReceive(stream_buf, buf, TWEET_BUF_LEN-1, portMAX_DELAY);
+		if (len == 0 || buf[0] != '{')
             continue;
+		buf[len] = 0;
 
-        ESP_LOGI(TAG, "got tweet");
+		// one tweet per line
+		tweet_buf = buf;
+		while (len > 0) {
+			pos = strchr(tweet_buf, '\n');
+			if (pos == NULL)
+				pos = buf + TWEET_BUF_LEN - 1;
+			*pos = 0;
 
-        pos1 = strstr(tweet_buf, "\"text\":\"");
-        if (pos1 == NULL)
-            continue;
-        pos1 += 8;
-        
-        pos2 = strchr(pos1, '"');
-        if (pos2 == NULL)
-            continue;
+			process_tweet(tweet_buf);
 
-        *pos2 = 0;
-        printf("%s\r\n", pos1);
-
-        wordle_len = process_tweet(pos1, wordle_buf);
-
-        if (wordle_len == 0 || wordle_len > 5)
-			continue;
-
-		for (i=0; i<5; i++) {
-			if (wordle_buf[5*(wordle_len-1) + i] != 'G')
-				break;
-        }
-		if (i < 5)
-			continue;
-
-		wordle_buf[5*wordle_len] = 0;
-        //printf("%s\r\n", wordle_buf);
-
-        ledmatrix_update(wordle_buf, wordle_len);
+			len -= (pos - tweet_buf + 1);
+			tweet_buf = pos + 1;
+		};
     }
 }
+
