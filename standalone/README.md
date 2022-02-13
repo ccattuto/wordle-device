@@ -27,7 +27,8 @@ The application conforms to the [ESP-IDF template project](https://github.com/es
 
 `idf.py menuconfig`
 
-to set the Wi-Fi SSID, password, and the Twitter bearer token under "Wordle Device Configuration".
+to set the Wi-Fi SSID, password, hostname, and the Twitter bearer token under "Wordle Device Configuration".
+
 Followed by:
 
 `idf.py flash`
