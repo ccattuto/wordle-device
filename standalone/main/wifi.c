@@ -29,6 +29,7 @@
 // Wi-Fi
 #define ESP_WIFI_SSID CONFIG_ESP_WIFI_SSID
 #define ESP_WIFI_PASS CONFIG_ESP_WIFI_PASSWORD
+#define ESP_WIFI_HOSTNAME CONFIG_ESP_WIFI_HOSTNAME
 
 // FreeRTOS event group to signal when we are connected
 static EventGroupHandle_t s_wifi_event_group;
@@ -111,6 +112,11 @@ int wifi_init(void)
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
     ESP_ERROR_CHECK(esp_wifi_start());
+    esp_err_t ret = tcpip_adapter_set_hostname(TCPIP_ADAPTER_IF_STA, ESP_WIFI_HOSTNAME);
+    if (ret != ESP_OK)
+    {
+        ESP_LOGI(TAG, "failed to set hostname: %d", ret);
+    }
 
     ESP_LOGI(TAG, "wifi_init_sta finished.");
 

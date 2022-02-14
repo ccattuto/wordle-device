@@ -12,15 +12,21 @@ menu "Wordle Device Configuration"
         help
             WiFi password (WPA or WPA2).
 
+    config ESP_WIFI_HOSTNAME
+        string "Network Hostname"
+        default "WORDLE-DEVICE"
+        help
+            Hostname for connection to the network.
+
 	config TWITTER_BEARER_TOKEN
         string "Twitter API Bearer Token"
         default "mybearertoken"
         help
-            Bearer Token to access Twitter v2 API.
+            Bearer Token to access Twitter API v2.
 
 	config TWITTER_WORDLE_TAG
-        string "Tag for wordle tweets"
+        string "Tag for Wordle tweets"
         default "wordle"
         help
-            Matching rule's tag for wordle tweets.
+            Matching rule tag for Wordle tweets.
 endmenu
